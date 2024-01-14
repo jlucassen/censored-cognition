@@ -15,7 +15,7 @@ DEFAULT_COMPLETION_ARGS = {
     "presence_penalty": 0,
 }
 
-DEFAULT_ANSWER_FORMATTING_INSTRUCTION = """When you're done, write the answer as "\nAnswer: <answer>", including just the final result without any reasoning. The final <answer> must not include any mathematical operations."""
+DEFAULT_ANSWER_FORMATTING_INSTRUCTION = """When you're done, write the answer as "\nAnswer: <answer>", including just the final result without any reasoning. The final <answer> must be an integer. It will be parsed by Python, so it will raise an error if it's not an integer. For example, if the answer is 42, write '\nAnswer: 42'"""
 
 
 @dataclass
@@ -27,12 +27,14 @@ class SolverResult:
 class Solver:
     def __init__(
         self,
+        name: str,
         model: str,
         base_prompt: str,
         use_token_hint: bool = False,
         completion_args: dict = {},
         formatting_instruction: str = DEFAULT_ANSWER_FORMATTING_INSTRUCTION,
     ):
+        self.name = name
         self.model = model
         self.encoding = tiktoken.encoding_for_model(model)
         self.client = OpenAI()
@@ -95,16 +97,16 @@ class Solver:
     def censor_strings(self, strings: list[str]) -> dict[str, int]:
         logit_biases = {}
         space_encoding = self.encoding.encode(" ")[0]
+        censored_tokens = []
         for string in strings:
             tokens = self.encoding.encode(string)
             tokens = [token for token in tokens if token != space_encoding]
             decoded_tokens = [self.encoding.decode([token]) for token in tokens]
             if len(decoded_tokens) > 1:
-                logging.warning(
-                    f"String {string} was tokenized into more than one token: {decoded_tokens}. Model: {self.model}. Censoring all tokens."
-                )
+                censored_tokens += decoded_tokens
             for token in tokens:
                 logit_biases[token] = -100
 
+        logging.debug(f"Censored tokens: {censored_tokens}")
         logging.debug(f"Logit biases: {logit_biases}")
         return logit_biases

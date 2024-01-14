@@ -14,7 +14,7 @@ def get_solvers() -> dict:
     return solvers
 
 
-def run(solver_name: str, path_to_task: str, num_threads: int = 4, **kwargs):
+def run(solver_name: str, path_to_task: str, num_threads: int = 4, upsample: int = 10, **kwargs):
     """
     Run a solver on a task.
 
@@ -25,8 +25,9 @@ def run(solver_name: str, path_to_task: str, num_threads: int = 4, **kwargs):
     """
     solvers = get_solvers()
     solver_args = solvers[solver_name]
+    solver_args["name"] = solver_name
     solver = Solver(**solver_args)
-    eval = CensoredCognition(path_to_task)
+    eval = CensoredCognition(path_to_task, upsample=upsample)
     eval.run(solver, num_threads=num_threads)
 
 
