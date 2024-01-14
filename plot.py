@@ -19,7 +19,7 @@ def extract_run_info(log_file):
 
 
 def plot(log_files):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))  # Increase the width of the plot
 
     results = []
 
