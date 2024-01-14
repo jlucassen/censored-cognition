@@ -7,16 +7,16 @@ def report_success_LLM(response: str, task: str, print_output=True, model: str =
     model = "gpt-4"
     client = OpenAI(api_key = os.getenv('OPENAI_API_KEY'))
 
-    default_reporter_prompt = "This is the output of a GPT-4 instance that was assigned a task. Your job is to report whether it completed that task successfully. Respond with either <YES> or <NO>. The task was:\n"
+    default_reporter_prompt = "This is the output of a GPT-4 instance that was assigned a task. Your job is to report whether it completed that task successfully. Report your final answer by saying either <YES> or <NO>. The task was:\n"
 
     report = client.chat.completions.create(
     model=model,
     messages=[
         {
             "role": "system",
-            "content": "",
+            "content": default_reporter_prompt+task if not reporter_prompt else reporter_prompt+task,
         },
-        {"role": "user", "content": default_reporter_prompt+task if not reporter_prompt else reporter_prompt+task}
+        {"role": "user", "content": response}
     ],
     temperature=0.9,
     max_tokens=512,
