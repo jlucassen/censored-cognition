@@ -21,6 +21,9 @@ def extract_run_info(log_file):
 def plot(log_files):
     fig, ax = plt.subplots(figsize=(12, 6))  # Increase the width of the plot
 
+    ax.set_xlabel("Solver")
+    ax.set_ylabel("Accuracy")
+    ax.set_title("Solver Accuracy on Product task under cognition censoring")
     results = []
 
     for log_file in log_files:
