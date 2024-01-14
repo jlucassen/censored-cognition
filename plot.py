@@ -30,8 +30,8 @@ def plot(log_files):
         results.append((solver, correct_percent))
 
     ax.bar(*zip(*results))
-    plt.show()
     plt.savefig("results.png")
+    plt.show()
 
 
 if __name__ == "__main__":
