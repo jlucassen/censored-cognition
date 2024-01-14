@@ -13,7 +13,8 @@ class EvalArgs():
 
 def eval_with_args(args: EvalArgs, print_output=True) -> str:
     '''
-    Input: an EvalArgs with all the info needed to specify an OpenAI call, run the call (and optionally print), return result string.
+    Input: an EvalArgs with all the info needed to specify an OpenAI call, run the call (and optional print flag).
+    Output: result string.
     '''
     encoding = tiktoken.encoding_for_model(args.model)
     logit_biases = {encoding.encode(token)[0]: -100 for token in args.censored_tokens}
