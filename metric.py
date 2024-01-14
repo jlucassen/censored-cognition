@@ -4,6 +4,10 @@ import os
 import colorama
 
 def report_success_LLM(response: str, task: str, print_output=True, model: str = 'gpt-4', reporter_prompt = None) -> bool:
+    '''
+    Input: response string, task description, some optional stuff.
+    Output: success according to LLM, or None if ambiguous.
+    '''
     model = "gpt-4"
     client = OpenAI(api_key = os.getenv('OPENAI_API_KEY'))
 
