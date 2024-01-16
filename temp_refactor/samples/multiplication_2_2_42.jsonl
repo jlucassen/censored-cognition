@@ -1,0 +1,2 @@
+{"id": 0, "messages": [{"role": "system", "content": "Multiply these two numbers using long multiplication. Think step by step."}, {"role": "user", "content": "81 * 14"}], "censored_strings": ["800", "320", "10", "4"], "correct_answer": "1134"}
+{"id": 1, "messages": [{"role": "system", "content": "Multiply these two numbers using long multiplication. Think step by step."}, {"role": "user", "content": "3 * 94"}], "censored_strings": ["270", "12"], "correct_answer": "282"}
