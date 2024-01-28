@@ -1,8 +1,10 @@
 import backoff
+from datetime import datetime
 import json
 from openai import OpenAI
-import logging
 import os
+import logging
+import sys
 import tiktoken
 
 from sample import Sample
@@ -40,7 +42,12 @@ class Solver:
     def __repr__(self):
         return {'model':self.model, 'completion_args':self.completion_args}.__repr__()
         
-    def solve(self, samples: [Sample]):
+    def solve(self, samples: [Sample], do_log=False, do_print=False):
+        if do_log:
+            now = datetime.now()
+            filename = now.strftime('logs/log_%Y_%m_%d_%H%M%S.txt')
+            logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG)
+
         responses = []
         for sample in samples:
             logit_biases = self.__censor_tokens(sample.censored_strings)
@@ -50,9 +57,22 @@ class Solver:
                 messages=sample.messages,
                 logit_bias=logit_biases,
                 #max_tokens=100,
+                stream=True,
                 **self.completion_args)
-            responses.append(response)
-            print(response.choices[0].message.content)
+            
+            full_response = ""
+            if do_log:
+                logging.info(sample)
+
+            for chunk in response:
+                content = chunk.choices[0].delta.content
+                if content:
+                    full_response += content
+                    if do_print:
+                        print(content, end="", flush=True)
+            if do_log:
+                logging.info(full_response)
+            responses.append(full_response)
         return responses
 
     def __censor_tokens(self, strings: list[str]) -> dict[str, int]:

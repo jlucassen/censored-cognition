@@ -1,4 +1,5 @@
 import json
+import logging
 
 from sample import Sample
 from solver import Solver
@@ -13,5 +14,5 @@ assert samples == samples2
 
 mySolver = Solver('gpt-4')
 results = mySolver.solve(samples)
-print(results)
-print("ALL ASSERTIONS PASSED!")
+logging.info(results)
+logging.info("ALL ASSERTIONS PASSED!")

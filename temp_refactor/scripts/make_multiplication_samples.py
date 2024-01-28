@@ -1,4 +1,5 @@
 from sample import Sample
+import logging
 
 import fire
 import random
@@ -27,7 +28,7 @@ def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, creativity:boo
 
         samples.append(Sample(n, messages, list(censored_strings), correct_answer))
     Sample.to_json(samples, f'samples/multiplication_{n_samples}_{n_digits}_{seed}{"_creativity" if creativity else ""}{"_awareness" if awareness else ""}.jsonl')
-    print("DONE!")
+    logging.info("DONE!")
 
 
 if __name__ == "__main__":
