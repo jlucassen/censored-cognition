@@ -9,9 +9,11 @@ import tiktoken
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from sample import Sample
 from result import Result
+from judge import Judge
 
 class Solver:
     '''
@@ -58,7 +60,7 @@ class Solver:
     def __repr__(self):
         return str(self.__dict__)
         
-    def solve_sample(self, sample: Sample):
+    def solve_sample(self, sample: Sample, judge: Judge):
         logit_biases = self.__censor_tokens(sample.censored_strings)
         response = self.complete_with_backoff(
             self.client,
@@ -77,7 +79,9 @@ class Solver:
                 if self.do_print:
                     print(content, end="", flush=True)
 
-        result = Result(sample, full_response, True)
+        correct = judge.bool_judge(sample, full_response)
+
+        result = Result(sample, full_response, correct)
         if self.do_log:
             with self.lock:
                 with open(self.log_filename, 'a') as logfile:
@@ -85,9 +89,11 @@ class Solver:
         return result
 
     
-    def solve_samples(self, samples:list[Sample], num_threads = 10):
+    def solve_samples(self, samples:list[Sample], judge: Judge, num_threads = 10):
+        curried_solve_sample = partial(self.solve_sample, judge=judge)
+
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            responses = executor.map(self.solve_sample, samples)
+            responses = executor.map(curried_solve_sample, samples)
 
         return list(responses)
 
