@@ -7,6 +7,9 @@ import logging
 import sys
 import tiktoken
 
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 from sample import Sample
 
 class Solver:
@@ -18,13 +21,25 @@ class Solver:
     def __init__(
             self,
             model: str,
-            completion_args: dict = {}
+            completion_args: dict = {},
+            do_log: bool = True,
+            do_print: bool = False
     ):
         self.model = model
         self.completion_args = completion_args
+        self.do_log = do_log
+        self.do_print = do_print
+
+        if do_log:
+            self.log_filename = datetime.now().strftime('logs/log_%Y_%m_%d_%H%M%S.txt')
+            open(self.log_filename, "w")
         
         self.client = OpenAI(api_key = os.getenv('OPENAI_API_KEY'))
         self.encoding = tiktoken.encoding_for_model(self.model)
+
+        self.lock = threading.Lock()
+        
+        
 
     @classmethod
     def to_json(self, solvers:list, path:str):
@@ -42,38 +57,37 @@ class Solver:
     def __repr__(self):
         return {'model':self.model, 'completion_args':self.completion_args}.__repr__()
         
-    def solve(self, samples: [Sample], do_log=False, do_print=False):
-        if do_log:
-            now = datetime.now()
-            filename = now.strftime('logs/log_%Y_%m_%d_%H%M%S.txt')
-            logging.basicConfig(filename=filename, encoding='utf-8', level=logging.DEBUG)
+    def solve_sample(self, sample: Sample):
+        logit_biases = self.__censor_tokens(sample.censored_strings)
+        response = self.complete_with_backoff(
+            self.client,
+            model=self.model,
+            messages=sample.messages,
+            logit_bias=logit_biases,
+            #max_tokens=100,
+            stream=True,
+            **self.completion_args)
+        
+        full_response = ""
+        for chunk in response:
+            content = chunk.choices[0].delta.content
+            if content:
+                full_response += content
+                if self.do_print:
+                    print(content, end="", flush=True)
+        if self.do_log:
+            with self.lock:
+                with open(self.log_filename, 'a') as logfile:
+                    logfile.write(json.dumps(sample.__repr__(), ensure_ascii=False) + "\n")
+                    logfile.write(full_response + "\n")
+        return full_response
 
-        responses = []
-        for sample in samples:
-            logit_biases = self.__censor_tokens(sample.censored_strings)
-            response = self.complete_with_backoff(
-                self.client,
-                model=self.model,
-                messages=sample.messages,
-                logit_bias=logit_biases,
-                #max_tokens=100,
-                stream=True,
-                **self.completion_args)
-            
-            full_response = ""
-            if do_log:
-                logging.info(sample)
+    
+    def solve_samples(self, samples:list[Sample], num_threads = 10):
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            responses = executor.map(self.solve_sample, samples)
 
-            for chunk in response:
-                content = chunk.choices[0].delta.content
-                if content:
-                    full_response += content
-                    if do_print:
-                        print(content, end="", flush=True)
-            if do_log:
-                logging.info(full_response)
-            responses.append(full_response)
-        return responses
+        return list(responses)
 
     def __censor_tokens(self, strings: list[str]) -> dict[str, int]:
         logit_biases = {}

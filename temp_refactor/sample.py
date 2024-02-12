@@ -7,8 +7,8 @@ class Sample:
     def __init__(
         self,
         id: int,
-        messages: [dict],
-        censored_strings = [str],
+        messages: list[dict],
+        censored_strings = list[str],
         correct_answer = str
     ):
         self.id = id
