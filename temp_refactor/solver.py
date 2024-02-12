@@ -11,6 +11,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from sample import Sample
+from result import Result
 
 class Solver:
     '''
@@ -55,7 +56,7 @@ class Solver:
             return [Solver(**solver) for solver in lines]
 
     def __repr__(self):
-        return {'model':self.model, 'completion_args':self.completion_args}.__repr__()
+        return str(self.__dict__)
         
     def solve_sample(self, sample: Sample):
         logit_biases = self.__censor_tokens(sample.censored_strings)
@@ -75,12 +76,13 @@ class Solver:
                 full_response += content
                 if self.do_print:
                     print(content, end="", flush=True)
+
+        result = Result(sample, full_response, True)
         if self.do_log:
             with self.lock:
                 with open(self.log_filename, 'a') as logfile:
-                    logfile.write(json.dumps(sample.__repr__(), ensure_ascii=False) + "\n")
-                    logfile.write(full_response + "\n")
-        return full_response
+                    logfile.write(result.__repr__() + "\n")
+        return result
 
     
     def solve_samples(self, samples:list[Sample], num_threads = 10):

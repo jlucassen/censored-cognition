@@ -32,8 +32,7 @@ class Sample:
         pass
 
     def __repr__(self):
-        as_dict = {"id": self.id, "messages": self.messages, "censored_strings": self.censored_strings, "correct_answer": self.correct_answer}
-        return as_dict.__repr__()
+        return str(self.__dict__)
     
     def __eq__(self, other) -> bool:
         return self.id == other.id and other.messages is not None and self.messages == other.messages and other.censored_strings is not None and self.censored_strings == other.censored_strings and other.correct_answer is not None and self.correct_answer == other.correct_answer
