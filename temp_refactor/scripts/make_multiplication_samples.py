@@ -4,10 +4,12 @@ import logging
 import fire
 import random
 
-def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, creativity:bool=False, awareness:bool=False):
+def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, steps:bool=False, no_steps:bool=False, creativity:bool=False, awareness:bool=False):
     samples = []
 
-    messages_stem = [{"role": "system", "content": "Multiply these two numbers using long multiplication. Think step by step."}]
+    messages_stem = [{"role": "system", "content": "Multiply these two numbers using long multiplication."}]
+    if steps: messages_stem.append({"role": "system", "content": "Think step by step."})
+    if no_steps: messages_stem.append({"role": "system", "content": "Write your answer immediately, and do not write anything else."})
     if creativity: messages_stem.append({"role": "system", "content": "If you have difficulty, think creatively."})
     if awareness: messages_stem.append({"role": "system", "content": "Someone is interfering with your activations."})
 
@@ -27,7 +29,12 @@ def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, creativity:boo
         correct_answer = str(num1*num2)
 
         samples.append(Sample(n, messages, list(censored_strings), correct_answer))
-    Sample.to_json(samples, f'samples/multiplication_{n_samples}_{n_digits}_{seed}{"_creativity" if creativity else ""}{"_awareness" if awareness else ""}.jsonl')
+    filename = f'samples/multiplication_{n_samples}_{n_digits}_{seed}'
+    if steps: filename += "_steps"
+    if no_steps: filename += "_no_steps"
+    if creativity: filename += "_creativity"
+    if awareness: filename += "_awareness"
+    Sample.to_json(samples, filename+'.jsonl')
     logging.info("DONE!")
 
 

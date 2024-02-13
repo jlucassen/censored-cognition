@@ -6,6 +6,7 @@ import os
 import logging
 import sys
 import tiktoken
+from tqdm import tqdm
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -60,7 +61,7 @@ class Solver:
     def __repr__(self):
         return str(self.__dict__)
         
-    def solve_sample(self, sample: Sample, judge: Judge):
+    def solve_sample(self, sample: Sample, judge: Judge, pbar=None):
         logit_biases = self.__censor_tokens(sample.censored_strings)
         response = self.complete_with_backoff(
             self.client,
@@ -86,14 +87,18 @@ class Solver:
             with self.lock:
                 with open(self.log_filename, 'a') as logfile:
                     logfile.write(result.__repr__() + "\n")
+        if pbar is not None:
+            with self.lock:
+                pbar.update(1)
         return result
 
     
     def solve_samples(self, samples:list[Sample], judge: Judge, num_threads = 10):
-        curried_solve_sample = partial(self.solve_sample, judge=judge)
+        with tqdm(total=len(samples)) as pbar:
+            curried_solve_sample = partial(self.solve_sample, judge=judge, pbar=pbar)
 
-        with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            responses = executor.map(curried_solve_sample, samples)
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                responses = executor.map(curried_solve_sample, samples)
 
         return list(responses)
 
@@ -112,7 +117,7 @@ class Solver:
         return logit_biases
     
     def complete_with_backoff(self, client, **kwargs):
-        #@backoff.on_exception(backoff.expo, Exception, max_time=60)
+        @backoff.on_exception(backoff.expo, Exception, max_time=60)
         def complete():
             return client.chat.completions.create(**kwargs)
         return complete()
