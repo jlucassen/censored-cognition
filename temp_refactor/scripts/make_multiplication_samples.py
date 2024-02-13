@@ -27,6 +27,7 @@ def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, steps:bool=Fal
                 censored_strings.add(str(int(digit1)*int(digit2)*10**(i+j)))
 
         correct_answer = str(num1*num2)
+        censored_strings.remove(correct_answer)
 
         samples.append(Sample(n, messages, list(censored_strings), correct_answer))
     filename = f'samples/multiplication_{n_samples}_{n_digits}_{seed}'
