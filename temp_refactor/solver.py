@@ -7,6 +7,7 @@ import logging
 import sys
 import tiktoken
 from tqdm import tqdm
+import time
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -42,7 +43,7 @@ class Solver:
         self.encoding = tiktoken.encoding_for_model(self.model)
 
         self.lock = threading.Lock()
-        
+        self.rpm = 500
         
 
     @classmethod
@@ -62,6 +63,7 @@ class Solver:
         return str(self.__dict__)
         
     def solve_sample(self, sample: Sample, judge: Judge, pbar=None):
+        time.sleep(60/self.rpm)
         logit_biases = self.__censor_tokens(sample.censored_strings)
         response = self.complete_with_backoff(
             self.client,
