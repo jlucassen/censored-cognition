@@ -1,4 +1,3 @@
-import backoff
 from datetime import datetime
 import json
 from openai import OpenAI
@@ -6,6 +5,8 @@ import os
 import tiktoken
 from tqdm import tqdm
 import time
+import backoff
+import timeout_decorator
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -63,7 +64,7 @@ class Solver:
     def solve_sample(self, sample: Sample, judge: Judge, temp=0, max_tokens=100, pbar=None):
         time.sleep(60/self.rpm) # respect requests per minute limit
         logit_biases = self.__censor_tokens(sample.censored_strings)
-        response = self.complete_with_backoff(
+        response = self.complete_with_timeout(
             self.client,
             model=self.model,
             messages=sample.messages,
@@ -72,6 +73,9 @@ class Solver:
             max_tokens=max_tokens,
             stream=True,
             **self.completion_args)
+        
+        if response is None:
+            return Result(sample, "", False, False)
         
         full_response = ""
         for chunk in response:
@@ -94,13 +98,20 @@ class Solver:
 
     
     def solve_samples(self, samples:list[Sample], judge: Judge, num_threads = 10, temp=0, max_tokens=100):
-        with tqdm(total=len(samples)) as pbar:
-            curried_solve_sample = partial(self.solve_sample, judge=judge, temp=temp, max_tokens=max_tokens, pbar=pbar)
+        print(f"{num_threads=}")
+        if num_threads > 1:
+            with tqdm(total=len(samples)) as pbar:
+                curried_solve_sample = partial(self.solve_sample, judge=judge, temp=temp, max_tokens=max_tokens, pbar=pbar)
 
-            with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                responses = executor.map(curried_solve_sample, samples)
+                with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                    responses = executor.map(curried_solve_sample, samples)
+            responses = list(responses)
+        else:
+            responses = []
+            for sample in tqdm(samples):
+                responses.append(self.solve_sample(sample, judge, temp, max_tokens))
 
-        return list(responses)
+        return responses
 
     def __censor_tokens(self, strings: list[str]) -> dict[str, int]:
         logit_biases = {}
@@ -116,8 +127,16 @@ class Solver:
                 logit_biases[token] = -100
         return logit_biases
     
-    def complete_with_backoff(self, client, **kwargs):
-        @backoff.on_exception(backoff.expo, Exception, max_time=60)
+    def complete_with_timeout(self, client, **kwargs):
+        #@backoff.on_exception(backoff.expo, Exception, max_time=60)
+        @timeout_decorator.timeout(5)
         def complete():
             return client.chat.completions.create(**kwargs)
-        return complete()
+        
+        try:
+            v = complete()
+            print('no timeout!')
+            return v
+        except TimeoutError:
+            print('timeout!')
+            return None

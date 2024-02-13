@@ -5,11 +5,13 @@ class Result:
             self,
             sample: Sample,
             response: str,
-            correct: bool
+            correct: bool,
+            complete: bool = True
     ):
         self.sample = sample
         self.response = response
         self.correct = correct
+        self.complete = complete
 
     def __repr__(self):
         return str(self.__dict__)

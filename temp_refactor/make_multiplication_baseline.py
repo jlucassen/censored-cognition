@@ -25,9 +25,9 @@ results_4 = []
 # %%
 for i, samples in enumerate([samples_1, samples_2, samples_3, samples_4, samples_5]):
     print(f'Solving samples with {i} digits with gpt-3')
-    solution_3 = solver_3.solve_samples(samples, containsJudge, max_tokens=10)
+    solution_3 = solver_3.solve_samples(samples, containsJudge, max_tokens=10, num_threads=1)
     print(f'Solving samples with {i} digits with gpt-4')
-    solution_4 = solver_4.solve_samples(samples, containsJudge, max_tokens=10)
+    solution_4 = solver_4.solve_samples(samples, containsJudge, max_tokens=10, num_threads=1)
     results_3.append(solution_3)
     results_4.append(solution_4)
 
