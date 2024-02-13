@@ -3,8 +3,6 @@ from datetime import datetime
 import json
 from openai import OpenAI
 import os
-import logging
-import sys
 import tiktoken
 from tqdm import tqdm
 import time
@@ -62,15 +60,16 @@ class Solver:
     def __repr__(self):
         return str(self.__dict__)
         
-    def solve_sample(self, sample: Sample, judge: Judge, pbar=None):
-        time.sleep(60/self.rpm)
+    def solve_sample(self, sample: Sample, judge: Judge, temp=0, max_tokens=100, pbar=None):
+        time.sleep(60/self.rpm) # respect requests per minute limit
         logit_biases = self.__censor_tokens(sample.censored_strings)
         response = self.complete_with_backoff(
             self.client,
             model=self.model,
             messages=sample.messages,
             logit_bias=logit_biases,
-            #max_tokens=100,
+            temperature=temp,
+            max_tokens=max_tokens,
             stream=True,
             **self.completion_args)
         
@@ -81,7 +80,6 @@ class Solver:
                 full_response += content
                 if self.do_print:
                     print(content, end="", flush=True)
-
         correct = judge.bool_judge(sample, full_response)
 
         result = Result(sample, full_response, correct)
@@ -95,9 +93,9 @@ class Solver:
         return result
 
     
-    def solve_samples(self, samples:list[Sample], judge: Judge, num_threads = 10):
+    def solve_samples(self, samples:list[Sample], judge: Judge, num_threads = 10, temp=0, max_tokens=100):
         with tqdm(total=len(samples)) as pbar:
-            curried_solve_sample = partial(self.solve_sample, judge=judge, pbar=pbar)
+            curried_solve_sample = partial(self.solve_sample, judge=judge, temp=temp, max_tokens=max_tokens, pbar=pbar)
 
             with ThreadPoolExecutor(max_workers=num_threads) as executor:
                 responses = executor.map(curried_solve_sample, samples)
