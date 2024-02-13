@@ -23,39 +23,42 @@ results_3 = []
 results_4 = []
 
 # %%
-
 for i, samples in enumerate([samples_1, samples_2, samples_3, samples_4, samples_5]):
-    solution_3 = solver_3.solve_samples(samples, containsJudge)
-    solution_4 = solver_4.solve_samples(samples, containsJudge)
+    print(f'Solving samples with {i} digits with gpt-3')
+    solution_3 = solver_3.solve_samples(samples, containsJudge, max_tokens=10)
+    print(f'Solving samples with {i} digits with gpt-4')
+    solution_4 = solver_4.solve_samples(samples, containsJudge, max_tokens=10)
     results_3.append(solution_3)
     results_4.append(solution_4)
 
 
 # %%
-species = ('1', '2', '3', '4', '5')
-penguin_means = {
+digits = ('1', '2', '3', '4', '5')
+models = {
     'gpt-3': results_3,
     'gpt-4': results_4,
 }
 
-x = np.arange(len(species))  # the label locations
+x = np.arange(len(digits))  # the label locations
 width = 0.25  # the width of the bars
 multiplier = 0
 
 fig, ax = plt.subplots(layout='constrained')
 
-for attribute, measurement in penguin_means.items():
+for model_bar, responses in models.items():
+    metric = [sum([result.correct for result in results]) for results in responses]
     offset = width * multiplier
-    rects = ax.bar(x + offset, measurement, width, label=attribute)
+    rects = ax.bar(x + offset, metric, width, label=model_bar)
     ax.bar_label(rects, padding=3)
     multiplier += 1
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('Length (mm)')
-ax.set_title('Penguin attributes by species')
-ax.set_xticks(x + width, species)
-ax.legend(loc='upper left', ncols=3)
-ax.set_ylim(0, 250)
+ax.set_ylabel('# correct')
+ax.set_xlabel('# digits in each multiplicand')
+ax.set_title('Multiplication Performance')
+ax.set_xticks(x + width, digits)
+ax.legend(loc='upper right', ncols=3)
+ax.set_ylim(0, 10)
 
 plt.show()
 # %%
