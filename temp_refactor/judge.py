@@ -10,4 +10,8 @@ class Judge:
     
 class ContainsJudge(Judge):
     def bool_judge(self, sample, response):
-        return sample.correct_answer in response
+        return str(sample.correct_answer) in str(response)
+    
+class EqualsJudge(Judge):
+    def bool_judge(self, sample, response):
+        return str(sample.correct_answer) == str(response)
