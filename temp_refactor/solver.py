@@ -5,8 +5,6 @@ import os
 import tiktoken
 from tqdm import tqdm
 import time
-import backoff
-import timeout_decorator
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -64,7 +62,7 @@ class Solver:
     def solve_sample(self, sample: Sample, judge: Judge, temp=0, max_tokens=100, pbar=None):
         time.sleep(60/self.rpm) # respect requests per minute limit
         logit_biases = self.__censor_tokens(sample.censored_strings)
-        response = self.complete_with_timeout(
+        response = self.complete_with_modifiers(
             self.client,
             model=self.model,
             messages=sample.messages,
@@ -73,9 +71,6 @@ class Solver:
             max_tokens=max_tokens,
             stream=True,
             **self.completion_args)
-        
-        if response is None:
-            return Result(sample, "", False, False)
         
         full_response = ""
         for chunk in response:
@@ -127,16 +122,9 @@ class Solver:
                 logit_biases[token] = -100
         return logit_biases
     
-    def complete_with_timeout(self, client, **kwargs):
-        #@backoff.on_exception(backoff.expo, Exception, max_time=60)
-        @timeout_decorator.timeout(5)
+    def complete_with_modifiers(self, client, **kwargs):
+        #@backoff.on_exception(backoff.expo, Exception, max_time=10)
+        #@timeout_decorator.timeout(10)
         def complete():
             return client.chat.completions.create(**kwargs)
-        
-        try:
-            v = complete()
-            print('no timeout!')
-            return v
-        except TimeoutError:
-            print('timeout!')
-            return None
+        return complete()
