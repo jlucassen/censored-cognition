@@ -1,35 +1,41 @@
 # %%
 from sample import Sample
 from solver import Solver
-from judge import ContainsJudge
+from judge import EqualsJudge
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 # %%
 
-samples_1 = Sample.from_json('samples/multiplication_100_1_42_no_steps.jsonl')
-samples_2 = Sample.from_json('samples/multiplication_100_2_42_no_steps.jsonl')
-samples_3 = Sample.from_json('samples/multiplication_100_3_42_no_steps.jsonl')
-samples_4 = Sample.from_json('samples/multiplication_100_4_42_no_steps.jsonl')
-samples_5 = Sample.from_json('samples/multiplication_100_5_42_no_steps.jsonl')
+samples_1 = Sample.from_json('samples/multiplication_100_1_42_baseline.jsonl')
+samples_2 = Sample.from_json('samples/multiplication_100_2_42_baseline.jsonl')
+samples_3 = Sample.from_json('samples/multiplication_100_3_42_baseline.jsonl')
+samples_4 = Sample.from_json('samples/multiplication_100_4_42_baseline.jsonl')
+samples_5 = Sample.from_json('samples/multiplication_100_5_42_baseline.jsonl')
 
 solver_4 = Solver('gpt-4')
 solver_3 = Solver('gpt-3.5-turbo-0125')
 
-containsJudge = ContainsJudge()
+equalsJudge = EqualsJudge()
 
 results_3 = []
 results_4 = []
 
 # %%
 for i, samples in enumerate([samples_1, samples_2, samples_3, samples_4, samples_5]):
-    print(f'Solving samples with {i} digits with gpt-3')
-    solution_3 = solver_3.solve_samples(samples, containsJudge, max_tokens=10, num_threads=1)
-    print(f'Solving samples with {i} digits with gpt-4')
-    solution_4 = solver_4.solve_samples(samples, containsJudge, max_tokens=10, num_threads=1)
+    print(f'Solving samples with {i+1} digits with gpt-3')
+    solution_3 = solver_3.solve_samples(samples, equalsJudge, max_tokens=10, num_threads=10)
+    #print(f'Solving samples with {i+1} digits with gpt-4')
+    solution_4 = solution_3#solver_4.solve_samples(samples[:10], equalsJudge, max_tokens=10, num_threads=1)
     results_3.append(solution_3)
     results_4.append(solution_4)
+
+# %%
+for result in results_3:
+    print(f"{sum([result.complete for result in result])=}/{len(result)} completed")
+for result in results_4:
+    print(f"{sum([result.complete for result in result])=}/{len(result)} completed")
 
 
 # %%
@@ -57,8 +63,8 @@ ax.set_ylabel('# correct')
 ax.set_xlabel('# digits in each multiplicand')
 ax.set_title('Multiplication Performance')
 ax.set_xticks(x + width, digits)
-ax.legend(loc='upper right', ncols=3)
-ax.set_ylim(0, 10)
+ax.legend(loc='upper right', ncols=2)
+ax.set_ylim(0, 100)
 
+plt.savefig('multiplication_baseline.png')
 plt.show()
-# %%

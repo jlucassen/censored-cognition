@@ -1,10 +1,9 @@
 from sample import Sample
-import logging
 
 import fire
 import random
 
-def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, steps:bool=False, no_steps:bool=False, creativity:bool=False, awareness:bool=False):
+def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, baseline=False, steps:bool=False, no_steps:bool=False, creativity:bool=False, awareness:bool=False):
     samples = []
 
     messages_stem = [{"role": "system", "content": "Multiply these two numbers using long multiplication."}]
@@ -36,8 +35,6 @@ def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, steps:bool=Fal
     if creativity: filename += "_creativity"
     if awareness: filename += "_awareness"
     Sample.to_json(samples, filename+'.jsonl')
-    logging.info("DONE!")
-
 
 if __name__ == "__main__":
     fire.Fire(main)
