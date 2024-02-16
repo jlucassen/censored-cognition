@@ -14,7 +14,7 @@ samples_3 = Sample.from_json('samples/multiplication_100_3_42_baseline.jsonl')
 samples_4 = Sample.from_json('samples/multiplication_100_4_42_baseline.jsonl')
 samples_5 = Sample.from_json('samples/multiplication_100_5_42_baseline.jsonl')
 
-solver_4 = Solver('gpt-4')
+solver_4 = Solver('gpt-4-0125-preview')
 solver_3 = Solver('gpt-3.5-turbo-0125')
 
 equalsJudge = EqualsJudge()
@@ -27,15 +27,9 @@ for i, samples in enumerate([samples_1, samples_2, samples_3, samples_4, samples
     print(f'Solving samples with {i+1} digits with gpt-3')
     solution_3 = solver_3.solve_samples(samples, equalsJudge, max_tokens=10, num_threads=10)
     #print(f'Solving samples with {i+1} digits with gpt-4')
-    solution_4 = solution_3#solver_4.solve_samples(samples[:10], equalsJudge, max_tokens=10, num_threads=1)
+    #solution_4 = solver_4.solve_samples(samples, equalsJudge, max_tokens=10, num_threads=1)
     results_3.append(solution_3)
-    results_4.append(solution_4)
-
-# %%
-for result in results_3:
-    print(f"{sum([result.complete for result in result])=}/{len(result)} completed")
-for result in results_4:
-    print(f"{sum([result.complete for result in result])=}/{len(result)} completed")
+    results_4.append(solution_3)#4)
 
 
 # %%
@@ -61,10 +55,10 @@ for model_bar, responses in models.items():
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('# correct')
 ax.set_xlabel('# digits in each multiplicand')
-ax.set_title('Multiplication Performance')
+ax.set_title('Multiplication Memorization Baseline')
 ax.set_xticks(x + width, digits)
 ax.legend(loc='upper right', ncols=2)
 ax.set_ylim(0, 100)
 
-plt.savefig('multiplication_baseline.png')
+plt.savefig('multiplication_memorization_baseline.png')
 plt.show()

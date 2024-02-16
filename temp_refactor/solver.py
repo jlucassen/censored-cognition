@@ -93,7 +93,6 @@ class Solver:
 
     
     def solve_samples(self, samples:list[Sample], judge: Judge, num_threads = 10, temp=0, max_tokens=100):
-        print(f"{num_threads=}")
         if num_threads > 1:
             with tqdm(total=len(samples)) as pbar:
                 curried_solve_sample = partial(self.solve_sample, judge=judge, temp=temp, max_tokens=max_tokens, pbar=pbar)
@@ -123,8 +122,6 @@ class Solver:
         return logit_biases
     
     def complete_with_modifiers(self, client, **kwargs):
-        #@backoff.on_exception(backoff.expo, Exception, max_time=10)
-        #@timeout_decorator.timeout(10)
         def complete():
             return client.chat.completions.create(**kwargs)
         return complete()
