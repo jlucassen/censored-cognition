@@ -6,12 +6,12 @@ class Result:
             sample: Sample,
             response: str,
             correct: bool,
-            complete: bool = True
+            time: int
     ):
         self.sample = sample
         self.response = response
         self.correct = correct
-        self.complete = complete
+        self.time = time
 
     def __repr__(self):
         return str(self.__dict__)
