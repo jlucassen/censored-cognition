@@ -2,7 +2,15 @@ import json
 
 class Sample:
     '''
-    Specifies 
+    Specifies a task sample. Includes:
+    - an id
+    - a prompt
+    - a list of strings to censor
+    - a correct answer
+    
+    Has class methods to save to / load from .jsonl files.
+    Has a repr that returns str(self.dict)
+    Has an eq method that compares the __dict__ of two samples.
     '''
     def __init__(
         self,
@@ -28,11 +36,8 @@ class Sample:
             for sample in samples:
                 f.write((sample.__repr__() + "\n").replace("'", '"'))
 
-    def censor_strings():
-        pass
-
     def __repr__(self):
         return str(self.__dict__)
     
     def __eq__(self, other) -> bool:
-        return self.id == other.id and other.messages is not None and self.messages == other.messages and other.censored_strings is not None and self.censored_strings == other.censored_strings and other.correct_answer is not None and self.correct_answer == other.correct_answer
+        return self.__dict__ == other.__dict__

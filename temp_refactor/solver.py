@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 from openai import OpenAI
 import os
 import tiktoken
@@ -11,55 +10,42 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 from sample import Sample
-from result import Result
-from judge import Judge
+from result import SolverResult
 
 class Solver:
     '''
-    Specifies runs.
-    Init takes model and completion args.
-    Solve takes a list of samples and returns a list of responses.
+    Specifies how to get a response from a model. Includes:
+    - an id
+    - a model string
+    - a completion args dict
+    
+    Has functions to get SolverResponses from one Sample or a list of Samples.
+    Init gets OpenAI api key from environment variable.
+    Uses model embedding to turn censored strings into censored tokens.
+    Has a repr that returns str(self.dict)
+    Has some const solvers with common models and completion args.
     '''
     def __init__(
             self,
             model: str,
             completion_args: dict = {},
-            do_log: bool = True,
-            do_print: bool = False
     ):
         self.model = model
         self.completion_args = completion_args
-        self.do_log = do_log
-        self.do_print = do_print
 
-        if do_log:
-            self.log_filename = datetime.now().strftime('logs/log_%Y_%m_%d_%H%M%S.txt')
-            open(self.log_filename, "w")
+        self.log_filename = datetime.now().strftime('logs/solver_results/solver_result_log_%Y_%m_%d_%H%M%S.txt')
+        open(self.log_filename, "w")
         
         self.client = OpenAI(api_key = os.getenv('OPENAI_API_KEY'))
         self.encoding = tiktoken.encoding_for_model(self.model)
 
         self.lock = threading.Lock()
         self.rpm = 500
-        
-
-    @classmethod
-    def to_json(self, solvers:list, path:str):
-        with open(path, "w") as f:
-            for solver in solvers:
-                f.write((solver.__repr__() + "\n").replace("'", '"'))
-
-
-    @classmethod
-    def from_json(self, path: str):
-        with open(path, "r") as f:
-            lines = [json.loads(line) for line in f.readlines()]
-            return [Solver(**solver) for solver in lines]
 
     def __repr__(self):
         return str(self.__dict__)
         
-    def solve_sample(self, sample: Sample, judge: Judge, temp=0, max_tokens=100, pbar=None):
+    def solve_sample(self, sample: Sample, pbar=None) -> SolverResult:
         time.sleep(60/self.rpm) # respect requests per minute limit
         logit_biases = self.__censor_tokens(sample.censored_strings)
         response = self.complete_with_modifiers(
@@ -67,8 +53,6 @@ class Solver:
             model=self.model,
             messages=sample.messages,
             logit_bias=logit_biases,
-            temperature=temp,
-            max_tokens=max_tokens,
             stream=True,
             **self.completion_args)
         
@@ -77,25 +61,19 @@ class Solver:
             content = chunk.choices[0].delta.content
             if content:
                 full_response += content
-                if self.do_print:
-                    print(content, end="", flush=True)
-        correct = judge.bool_judge(sample, full_response)
 
-        result = Result(sample, full_response, correct)
-        if self.do_log:
-            with self.lock:
-                with open(self.log_filename, 'a') as logfile:
-                    logfile.write(result.__repr__() + "\n")
-        if pbar is not None:
-            with self.lock:
+        result = SolverResult(sample, self, full_response)
+        with self.lock:
+            with open(self.log_filename, 'a') as logfile:
+                logfile.write(result.__repr__() + "\n")
+            if pbar is not None:
                 pbar.update(1)
         return result
-
     
-    def solve_samples(self, samples:list[Sample], judge: Judge, num_threads = 10, temp=0, max_tokens=100):
+    def solve_samples(self, samples:list[Sample], num_threads = 10) -> list[SolverResult]:
         if num_threads > 1:
             with tqdm(total=len(samples)) as pbar:
-                curried_solve_sample = partial(self.solve_sample, judge=judge, temp=temp, max_tokens=max_tokens, pbar=pbar)
+                curried_solve_sample = partial(self.solve_sample, pbar=pbar)
 
                 with ThreadPoolExecutor(max_workers=num_threads) as executor:
                     responses = executor.map(curried_solve_sample, samples)
@@ -103,7 +81,7 @@ class Solver:
         else:
             responses = []
             for sample in tqdm(samples):
-                responses.append(self.solve_sample(sample, judge, temp, max_tokens))
+                responses.append(self.solve_sample(sample))
 
         return responses
 
@@ -125,3 +103,6 @@ class Solver:
         def complete():
             return client.chat.completions.create(**kwargs)
         return complete()
+    
+GPT_3_STRING = 'gpt-3.5-turbo-0125'
+GPT_4_STRING = 'gpt-4-0125-preview'
