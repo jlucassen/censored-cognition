@@ -12,4 +12,6 @@ samples2 = Sample.from_json('testfiles/test_sample2.jsonl')
 assert samples == samples2
 
 mySolver = Solver('gpt-4')
-results = mySolver.solve(samples)
+results = mySolver.solve_samples(samples)
+
+print("Tests passed!")

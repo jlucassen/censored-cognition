@@ -1,4 +1,10 @@
 from datetime import datetime
+import time
+from tqdm import tqdm
+
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from result import SolverResult, JudgeResult
 
@@ -19,13 +25,33 @@ class Judge:
         self.log_filename = datetime.now().strftime('logs/judge_results/judge_result_log_%Y_%m_%d_%H%M%S.txt')
         open(self.log_filename, "w")
 
-    def judge_samples(self, solver_results):
-        assert isinstance(solver_results, list) and isinstance(solver_results[0], SolverResult)
-        judge_bools = [self.judge_function(solver_result) for solver_result in solver_results]
-        judge_results = [JudgeResult(solver_result.sample, solver_result.solver, self, solver_result.response, judge_bool) for solver_result, judge_bool in zip(solver_results, judge_bools)]
-        assert all([isinstance(x, JudgeResult) for x in judge_results])
-        with open(self.log_filename, 'a') as logfile:
-            logfile.write("\n".join([judge_result.__repr__() for judge_result in judge_results]))
+        self.lock = threading.Lock()
+        self.rpm = 500
+
+    def judge_solver_result(self, solver_result, pbar=None):
+        time.sleep(60/self.rpm) # respect requests per minute limit
+        assert isinstance(solver_result, SolverResult)
+        judge_bool = self.judge_function(solver_result)
+        judge_result = JudgeResult(solver_result.sample, solver_result.solver, self, solver_result.response, judge_bool)
+        with self.lock:
+            with open(self.log_filename, 'a') as logfile:
+                logfile.write(judge_result.__repr__()+"\n")
+            if pbar is not None:
+                pbar.update(1)
+        return judge_result
+
+    def judge_solver_results(self, solver_results, num_threads = 10):
+        assert isinstance(solver_results, list)
+        if num_threads > 1:
+            with tqdm(total=len(solver_results)) as pbar:
+                curried_judge_solver_result = partial(self.judge_solver_result, pbar=pbar)
+                with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                    judge_results = list(executor.map(lambda solver_result: curried_judge_solver_result(solver_result), solver_results))
+            judge_results = list(judge_results)
+        else:
+            judge_results = []
+            for solver_result in tqdm(solver_results):
+                judge_results.append(self.judge_solver_result(solver_result))
         return judge_results
     
     def __repr__(self):

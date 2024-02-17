@@ -82,7 +82,6 @@ class Solver:
             responses = []
             for sample in tqdm(samples):
                 responses.append(self.solve_sample(sample))
-
         return responses
 
     def __censor_tokens(self, strings: list[str]) -> dict[str, int]:
