@@ -27,8 +27,8 @@ my_solver_result2 = SolverResult.from_json('testfiles/test_solver_result.jsonl')
 # assert that response is the same
 assert my_solver_result.response == my_solver_result2.response
 # assert that serializable solver properties are the same
-assert my_solver_result.solver.model == my_solver_result2.solver['model']
-assert my_solver_result.solver.completion_args == my_solver_result2.solver['completion_args']
+assert my_solver_result.solver.model == my_solver_result2.solver.model
+assert my_solver_result.solver.completion_args == my_solver_result2.solver.completion_args
 
 # load a judge from const
 my_judge = EQUALS_JUDGE

@@ -1,4 +1,6 @@
 import json
+from sample import Sample
+from solver import Solver
 
 class SolverResult:
     def __init__(
@@ -10,6 +12,11 @@ class SolverResult:
         self.sample = sample
         self.response = response
         self.solver = solver
+
+        if isinstance(self.sample, dict):
+            self.sample = Sample(**self.sample)
+        if isinstance(self.solver, dict):
+            self.solver = Solver(**self.solver)
 
     def __repr__(self):
         return str(self.__dict__)
@@ -41,6 +48,11 @@ class JudgeResult:
         self.solver = solver
         self.judge = judge
         self.correct = correct
+
+        if isinstance(self.sample, dict):
+            self.sample = Sample(**self.sample)
+        if isinstance(self.solver, dict):
+            self.solver = Solver(**self.solver)
 
     def __repr__(self):
         return str(self.__dict__)
