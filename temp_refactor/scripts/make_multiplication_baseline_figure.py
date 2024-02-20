@@ -1,6 +1,6 @@
 from sample import Sample
-from solver import Solver, GPT_3_STRING, GPT_4_STRING
-from judge import EQUALS_JUDGE
+from solver import Solver, GPT_3_STRING, GPT_4_STRING, SolverResult
+from judge import EQUALS_JUDGE, JudgeResult
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,6 +27,11 @@ for i, samples in enumerate([samples_1, samples_2, samples_3, samples_4, samples
     solver_results_3.append(solution_3)
     solver_results_4.append(solution_4)
 
+flattened_solver_results_3 = [solver_result for sublist in solver_results_3 for solver_result in sublist]
+flattened_solver_results_4 = [solver_result for sublist in solver_results_4 for solver_result in sublist]
+SolverResult.to_json(flattened_solver_results_3, 'logs/multiplication/multiplication_baseline_solver_results_3.jsonl')
+SolverResult.to_json(flattened_solver_results_4, 'logs/multiplication/multiplication_baseline_solver_results_4.jsonl')
+
 judge_results_3 = []
 judge_results_4 = []
 for i, solver_results in enumerate(solver_results_3):
@@ -35,6 +40,12 @@ for i, solver_results in enumerate(solver_results_3):
 for i, solver_results in enumerate(solver_results_4):
     print(f'Judging gpt-4 responses with {i+1} digits')
     judge_results_4.append(equalsJudge.judge_solver_results(solver_results))
+
+flattened_judge_results_3 = [judge_result for sublist in judge_results_3 for judge_result in sublist]
+flattened_judge_results_4 = [judge_result for sublist in judge_results_4 for judge_result in sublist]
+
+JudgeResult.to_json(flattened_judge_results_3, 'logs/multiplication/multiplication_baseline_judge_results_3.jsonl')
+JudgeResult.to_json(flattened_judge_results_4, 'logs/multiplication/multiplication_baseline_judge_results_4.jsonl')
 
 digits = ('1', '2', '3', '4', '5')
 models = {

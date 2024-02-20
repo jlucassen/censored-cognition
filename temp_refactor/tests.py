@@ -1,9 +1,8 @@
 import json
 
 from sample import Sample
-from solver import Solver, GPT_3_STRING
-from result import SolverResult, JudgeResult
-from judge import EQUALS_JUDGE
+from solver import Solver, GPT_3_STRING, SolverResult
+from judge import EQUALS_JUDGE, JudgeResult
 
 # make a sample from constructor
 my_sample = Sample(0,

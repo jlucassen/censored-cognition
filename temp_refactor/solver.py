@@ -4,13 +4,12 @@ import os
 import tiktoken
 from tqdm import tqdm
 import time
-
+import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 from sample import Sample
-from result import SolverResult
 
 class Solver:
     '''
@@ -45,7 +44,7 @@ class Solver:
     def __repr__(self):
         return str({'model': self.model, 'completion_args': self.completion_args})
         
-    def solve_sample(self, sample: Sample, pbar=None) -> SolverResult:
+    def solve_sample(self, sample: Sample, pbar=None):
         time.sleep(60/self.rpm) # respect requests per minute limit
         logit_biases = self.__censor_tokens(sample.censored_strings)
         response = self.complete_with_modifiers(
@@ -70,7 +69,7 @@ class Solver:
                 pbar.update(1)
         return result
     
-    def solve_samples(self, samples:list[Sample], num_threads = 10) -> list[SolverResult]:
+    def solve_samples(self, samples:list[Sample], num_threads = 10):
         if num_threads > 1:
             with tqdm(total=len(samples)) as pbar:
                 curried_solve_sample = partial(self.solve_sample, pbar=pbar)
@@ -105,3 +104,34 @@ class Solver:
     
 GPT_3_STRING = 'gpt-3.5-turbo-0125'
 GPT_4_STRING = 'gpt-4-0125-preview'
+
+class SolverResult:
+    def __init__(
+            self,
+            sample,
+            solver,
+            response: str,
+    ):
+        self.sample = sample
+        self.response = response
+        self.solver = solver
+
+        if isinstance(self.sample, dict):
+            self.sample = Sample(**self.sample)
+        if isinstance(self.solver, dict):
+            self.solver = Solver(**self.solver)
+
+    def __repr__(self):
+        return str(self.__dict__)
+    
+    @classmethod
+    def from_json(self, path: str):
+        with open(path, "r") as f:
+            lines = [json.loads(line) for line in f.readlines()]
+            return [SolverResult(**solver_result) for solver_result in lines]
+        
+    @classmethod
+    def to_json(self, solver_results: list, path: str):
+        with open(path, "w") as f:
+            for solver_result in solver_results:
+                f.write((solver_result.__repr__() + "\n").replace("'", '"'))

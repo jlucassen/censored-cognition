@@ -1,12 +1,13 @@
 from datetime import datetime
 import time
 from tqdm import tqdm
-
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import json
 
-from result import SolverResult, JudgeResult
+from sample import Sample
+from solver import Solver, SolverResult
 
 class Judge:
     '''
@@ -71,3 +72,41 @@ def equals_digit_judge_func(solver_response):
     digit_substring = ''.join([i for i in solver_response.response if i.isdigit()])
     return str(digit_substring) == str(solver_response.response)
 EQUALS_DIGIT_JUDGE = Judge(3, equals_digit_judge_func)
+
+class JudgeResult:
+    def __init__(
+            self,
+            sample,
+            solver,
+            judge,
+            response: str,
+            correct: bool,
+    ):
+        self.sample = sample
+        self.response = response
+        self.solver = solver
+        self.judge = judge
+        self.correct = correct
+
+        if isinstance(self.sample, dict):
+            self.sample = Sample(**self.sample)
+        if isinstance(self.solver, dict):
+            self.solver = Solver(**self.solver)
+
+    def __repr__(self):
+        return str(self.__dict__)
+    
+    @classmethod
+    def from_json(self, path: str):
+        with open(path, "r") as f:
+            lines = [json.loads(line) for line in f.readlines()]
+            return [JudgeResult(**judge_result) for judge_result in lines]
+        
+    @classmethod
+    def to_json(self, judge_results: list, path: str):
+        with open(path, "w") as f:
+            for judge_result in judge_results:
+                temp = judge_result.correct
+                judge_result.correct = str(judge_result.correct)
+                f.write((judge_result.__repr__() + "\n").replace("'", '"'))
+                judge_result.correct = temp
