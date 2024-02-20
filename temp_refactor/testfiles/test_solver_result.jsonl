@@ -1,0 +1,1 @@
+{"sample": {"id": 0, "messages": [{"role": "system", "content": "Repeat what the user says back to them."}, {"role": "user", "content": "Repeat this back!"}], "censored_strings": ["censor", "these", "strings"], "correct_answer": "Repeat this back!"}, "response": "Repeat this back!", "solver": {"model": "gpt-3.5-turbo-0125", "completion_args": {}}}

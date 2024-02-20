@@ -43,7 +43,7 @@ class Solver:
         self.rpm = 500
 
     def __repr__(self):
-        return str(self.__dict__)
+        return str({'model': self.model, 'completion_args': self.completion_args})
         
     def solve_sample(self, sample: Sample, pbar=None) -> SolverResult:
         time.sleep(60/self.rpm) # respect requests per minute limit

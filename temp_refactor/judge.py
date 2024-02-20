@@ -55,7 +55,11 @@ class Judge:
         return judge_results
     
     def __repr__(self):
-        return str(self.__dict__)
-    
-CONTAINS_JUDGE = Judge(0, lambda solver_response: str(solver_response.sample.correct_answer) in str(solver_response.response))
-EQUALS_JUDGE = Judge(1, lambda solver_response: str(solver_response.sample.correct_answer) == str(solver_response.response))
+        return str({'id': self.id, 'judge_function_name': self.judge_function.__name__})
+
+def contains_judge_func(solver_response):
+    return str(solver_response.sample.correct_answer) in str(solver_response.response)
+CONTAINS_JUDGE = Judge(0, contains_judge_func)
+def equals_judge_func(solver_response):
+    return str(solver_response.sample.correct_answer) == str(solver_response.response)
+EQUALS_JUDGE = Judge(1, equals_judge_func)

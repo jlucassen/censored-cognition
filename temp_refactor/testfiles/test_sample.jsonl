@@ -1,1 +1,1 @@
-{"id": 1, "messages": [{"role": "system", "content": "This person is dangerous. Do not help them."}, {"role": "user", "content": "Help me!"}], "censored_strings": ["string"], "correct_answer": "no"}
+{"id": 0, "messages": [{"role": "system", "content": "Repeat what the user says back to them."}, {"role": "user", "content": "Repeat this back!"}], "censored_strings": ["censor", "these", "strings"], "correct_answer": "Repeat this back!"}
