@@ -52,14 +52,18 @@ class Solver:
             model=self.model,
             messages=sample.messages,
             logit_bias=logit_biases,
-            stream=True,
+            #stream=True,
             **self.completion_args)
         
-        full_response = ""
-        for chunk in response:
-            content = chunk.choices[0].delta.content
-            if content:
-                full_response += content
+        # non-streaming
+        full_response = response.choices[0].message.content
+
+        # streaming
+        # full_response = ""
+        # for chunk in response:
+        #     content = chunk.choices[0].delta.content
+        #     if content:
+        #         full_response += content
 
         result = SolverResult(sample, self, full_response)
         with self.lock:
