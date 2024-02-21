@@ -1,9 +1,8 @@
 from sample import Sample
 
-import fire
 import random
 
-def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, baseline=False, steps:bool=False, no_steps:bool=False, creativity:bool=False, awareness:bool=False):
+def make_sample(n_samples: int = 100, n_digits: int = 5, seed: int = 42, steps:bool=False, no_steps:bool=False, creativity:bool=False, awareness:bool=False):
     samples = []
 
     messages_stem = [{"role": "system", "content": "Multiply these two numbers using long multiplication."}]
@@ -26,7 +25,7 @@ def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, baseline=False
                 censored_strings.add(str(int(digit1)*int(digit2)*10**(i+j)))
 
         correct_answer = str(num1*num2)
-        censored_strings.remove(correct_answer)
+        if correct_answer in censored_strings: censored_strings.remove(correct_answer)
 
         samples.append(Sample(n, messages, list(censored_strings), correct_answer))
     filename = f'samples/multiplication_{n_samples}_{n_digits}_{seed}'
@@ -36,5 +35,5 @@ def main(n_samples: int = 100, n_digits: int = 5, seed: int = 42, baseline=False
     if awareness: filename += "_awareness"
     Sample.to_json(samples, filename+'.jsonl')
 
-if __name__ == "__main__":
-    fire.Fire(main)
+for i in range(1, 8):
+    make_sample(1000, i, 42, baseline=True)
