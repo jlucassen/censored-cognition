@@ -5,7 +5,7 @@ from solver import SolverResult
 from judge import EQUALS_JUDGE, CONTAINS_JUDGE, EQUALS_DIGIT_JUDGE, CONTAINS_DIGIT_JUDGE
 
 def make_plot(judge_results_3, judge_results_4, title_addendum, savefilename):
-    digits = ('1', '2', '3', '4', '5')
+    digits = tuple([str(x) for x in range(1, len(judge_results_3)+1)])
     models = {
         'gpt-3': judge_results_3,
         'gpt-4': judge_results_4,
@@ -18,7 +18,7 @@ def make_plot(judge_results_3, judge_results_4, title_addendum, savefilename):
     fig, ax = plt.subplots(layout='constrained')
 
     for model_bar, responses in models.items():
-        metric = [sum([result.correct for result in results]) for results in responses]
+        metric = [sum([result.correct for result in results])/len(results) for results in responses]
         offset = width * multiplier
         rects = ax.bar(x + offset, metric, width, label=model_bar)
         ax.bar_label(rects, padding=3)
@@ -30,7 +30,7 @@ def make_plot(judge_results_3, judge_results_4, title_addendum, savefilename):
     ax.set_title(f'Multiplication Memorization Baseline, {title_addendum}')
     ax.set_xticks(x + width, digits)
     ax.legend(loc='upper right', ncols=2)
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 1)
 
     plt.savefig(f'figs/{savefilename}.png')
     plt.show()
@@ -38,12 +38,15 @@ def make_plot(judge_results_3, judge_results_4, title_addendum, savefilename):
 solver_results_3 = SolverResult.from_json('logs/multiplication/multiplication_baseline_solver_results_3.jsonl')
 solver_results_4 = SolverResult.from_json('logs/multiplication/multiplication_baseline_solver_results_4.jsonl')
 
+batch = 100
+
 for name, judge in {'EQUALS_JUDGE':EQUALS_JUDGE,'CONTAINS_JUDGE':CONTAINS_JUDGE, 'EQUALS_DIGIT_JUDGE':EQUALS_DIGIT_JUDGE, 'CONTAINS_DIGIT_JUDGE':CONTAINS_DIGIT_JUDGE}.items():
-    judge_results_3_flat = judge.judge_solver_results(solver_results_3)
-    judge_results_4_flat = judge.judge_solver_results(solver_results_4)
-    # divide up flattened judge results into lists of 100
-    assert len(judge_results_3_flat)%100 == 0
-    assert len(judge_results_4_flat)%100 == 0
-    judge_results_3 = [judge_results_3_flat[i*100:(i+1)*100] for i in range(int(len(judge_results_3_flat)/100))]
-    judge_results_4 = [judge_results_4_flat[i*100:(i+1)*100] for i in range(int(len(judge_results_4_flat)/100))]
-    make_plot(judge_results_3, judge_results_4, title_addendum=name, savefilename=f'multiplication_memorization_baseline_{name}')
+    judge_results_3_flat = judge.judge_solver_results(solver_results_3, num_threads=100)
+    judge_results_4_flat = judge.judge_solver_results(solver_results_4, num_threads=100)
+    # divide up flattened judge results into lists of 1000
+    assert len(judge_results_3_flat)%batch == 0
+    assert len(judge_results_4_flat)%batch == 0
+    print(len(judge_results_3_flat), len(judge_results_4_flat))
+    judge_results_3 = [judge_results_3_flat[i*batch:(i+1)*batch] for i in range(int(len(judge_results_3_flat)/batch))]
+    judge_results_4 = [judge_results_4_flat[i*batch:(i+1)*batch] for i in range(int(len(judge_results_4_flat)/batch))]
+    make_plot(judge_results_3, judge_results_4, title_addendum=name, savefilename=f'multiplication_memorization_baseline1000_{name}')
