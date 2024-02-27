@@ -65,12 +65,10 @@ def equals_judge_func(solver_response):
     return str(solver_response.sample.correct_answer) == str(solver_response.response)
 EQUALS_JUDGE = Judge(1, equals_judge_func)
 def contains_digit_judge_func(solver_response):
-    digit_substring = ''.join([i for i in solver_response.response if i.isdigit()])
-    return str(digit_substring) in str(solver_response.response)
+    return str(solver_response.sample.correct_answer) in str(solver_response.response.replace(",", ""))
 CONTAINS_DIGIT_JUDGE = Judge(2, contains_digit_judge_func)
 def equals_digit_judge_func(solver_response):
-    digit_substring = ''.join([i for i in solver_response.response if i.isdigit()])
-    return str(digit_substring) == str(solver_response.response)
+    return str(solver_response.sample.correct_answer) == str(solver_response.response.replace(",", ""))
 EQUALS_DIGIT_JUDGE = Judge(3, equals_digit_judge_func)
 
 class JudgeResult:
