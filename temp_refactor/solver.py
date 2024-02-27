@@ -109,12 +109,15 @@ class Solver:
 GPT_3_STRING = 'gpt-3.5-turbo-0125'
 
 def get_gpt_4_string():
+    real_gpt_4_string = 'gpt-4-0125-preview'
     print("USING GPT-4. THIS MIGHT BE EXPENSIVE, ARE YOU SURE?")
     print("Type 'Y' to continue, '3' to use GPT-3, or anything else to cancel.")
     user_input = input()
     if user_input == 'Y':
-        return 'gpt-4-0125-preview'
+        print("Using "+real_gpt_4_string)
+        return real_gpt_4_string
     elif user_input == '3':
+        print("Using "+GPT_3_STRING)
         return GPT_3_STRING
     else:
         raise Exception("Run cancelled. Exception data: LMAO POOR")
