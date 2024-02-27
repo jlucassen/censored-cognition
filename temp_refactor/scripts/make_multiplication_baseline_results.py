@@ -21,10 +21,12 @@ equalsJudge = EQUALS_DIGIT_JUDGE
 solver_results_3 = []
 solver_results_4 = []
 
-for i, samples in enumerate([samples_1, samples_2, samples_3, samples_4, samples_5, samples_6, samples_7]):
+for i, samples in enumerate([samples_1, samples_2, samples_3, samples_4, samples_5 , samples_6, samples_7]):
     print(f'Solving samples with {i+1} digits with gpt-3')
+    solver_3.completion_args['max_tokens'] = int(2*(i+1)*4/3+5) # i+1 digits, 2 numbers, 4/3 characters per digit w commas, 5 for good measure
     solution_3 = solver_3.solve_samples(samples, num_threads=100)
     print(f'Solving samples with {i+1} digits with gpt-4')
+    solver_4.completion_args['max_tokens'] = int(2*(i+1)*4/3+5) # i+1 digits, 2 numbers, 4/3 characters per digit w commas, 5 for good measure
     solution_4 = solver_4.solve_samples(samples, num_threads=100)
     solver_results_3.append(solution_3)
     solver_results_4.append(solution_4)
@@ -48,33 +50,3 @@ flattened_judge_results_4 = [judge_result for sublist in judge_results_4 for jud
 
 JudgeResult.to_json(flattened_judge_results_3, 'logs/multiplication/multiplication_baseline1000_judge_results_3.jsonl')
 JudgeResult.to_json(flattened_judge_results_4, 'logs/multiplication/multiplication_baseline1000_judge_results_4.jsonl')
-
-digits = tuple([str(x) for x in range(1, len(judge_results_3)+1)])
-models = {
-    'gpt-3': judge_results_3,
-    'gpt-4': judge_results_4,
-}
-
-x = np.arange(len(digits))  # the label locations
-width = 0.25  # the width of the bars
-multiplier = 0
-
-fig, ax = plt.subplots(layout='constrained')
-
-for model_bar, responses in models.items():
-    metric = [sum([result.correct for result in results])/len(results) for results in responses]
-    offset = width * multiplier
-    rects = ax.bar(x + offset, metric, width, label=model_bar)
-    ax.bar_label(rects, padding=3)
-    multiplier += 1
-
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('# correct')
-ax.set_xlabel('# digits in each multiplicand')
-ax.set_title('Multiplication Memorization Baseline')
-ax.set_xticks(x + width, digits)
-ax.legend(loc='upper right', ncols=2)
-ax.set_ylim(0, 1)
-
-plt.savefig('figs/multiplication_memorization_baseline.png')
-plt.show()
