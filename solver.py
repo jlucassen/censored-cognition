@@ -1,100 +1,93 @@
-import logging
-from dataclasses import dataclass
-
-import tiktoken
-import yaml
+from datetime import datetime
 from openai import OpenAI
+import os
+import tiktoken
+from tqdm import tqdm
+import time
+import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
-from utils import complete_with_backoff
-
-DEFAULT_COMPLETION_ARGS = {
-    "temperature": 0.9,
-    "max_tokens": 256,
-    "top_p": 0.98,
-    "frequency_penalty": 0,
-    "presence_penalty": 0,
-}
-
-DEFAULT_ANSWER_FORMATTING_INSTRUCTION = """When you're done, write the answer as "\nAnswer: <answer>", including just the final result without any reasoning. The final <answer> must be an integer. It will be parsed by Python, so it will raise an error if it's not an integer. For example, if the answer is 42, write '\nAnswer: 42'"""
-
-
-@dataclass
-class SolverResult:
-    answer: str
-    full_completion: str
-
+from sample import Sample
 
 class Solver:
+    '''
+    Specifies how to get a response from a model. Includes:
+    - an id
+    - a model string
+    - a completion args dict
+    
+    Has functions to get SolverResponses from one Sample or a list of Samples.
+    Init gets OpenAI api key from environment variable.
+    Uses model embedding to turn censored strings into censored tokens.
+    Has a repr that returns str(self.dict)
+    Has some const solvers with common models and completion args.
+    '''
     def __init__(
-        self,
-        name: str,
-        model: str,
-        base_prompt: str,
-        use_token_hint: bool = False,
-        completion_args: dict = {},
-        formatting_instruction: str = DEFAULT_ANSWER_FORMATTING_INSTRUCTION,
+            self,
+            model: str,
+            completion_args: dict = {},
     ):
-        self.name = name
         self.model = model
-        self.encoding = tiktoken.encoding_for_model(model)
-        self.client = OpenAI()
+        self.completion_args = completion_args
 
-        self.base_prompt = base_prompt
-        self.use_token_hint = use_token_hint
-        self.completion_args = DEFAULT_COMPLETION_ARGS | completion_args
-        self.formatting_instruction = formatting_instruction
+        self.log_filename = datetime.now().strftime('logs/solver_results/solver_result_log_%Y_%m_%d_%H%M%S.txt')
+        open(self.log_filename, "w")
+        
+        self.client = OpenAI(api_key = os.getenv('OPENAI_API_KEY'))
+        self.encoding = tiktoken.encoding_for_model(self.model)
 
-    @classmethod
-    def from_yaml(self, path: str):
-        with open(path, "r") as f:
-            config = yaml.safe_load(f)
+        self.lock = threading.Lock()
+        self.rpm = 500
 
-        return Solver(**config)
-
-    def solve(self, task: str, censored_strings: list[str] = []) -> SolverResult:
-        # censor model's cognition
-        logit_biases = self.censor_strings(censored_strings)
-
-        # construct system prompt
-        system_prompt = self.base_prompt + self.formatting_instruction
-        if self.use_token_hint:
-            max_tokens = self.completion_args["max_tokens"]
-            token_hint = f"Note: You have a total of {max_tokens} tokens (about {max_tokens * 0.75//1}) to complete the task."
-            system_prompt += "\n\n" + token_hint
-
-        # construct prompt
-        messages = [
-            {
-                "role": "system",
-                "content": system_prompt,
-            },
-            {
-                "role": "user",
-                "content": task,
-            },
-        ]
-
-        response = complete_with_backoff(
+    def __repr__(self):
+        return str({'model': self.model, 'completion_args': self.completion_args})
+        
+    def solve_sample(self, sample: Sample, pbar=None, do_censor = True):
+        time.sleep(60/self.rpm) # respect requests per minute limit
+        logit_biases = self.__censor_tokens(sample.censored_strings) if do_censor else {}
+        response = self.complete_with_modifiers(
             self.client,
             model=self.model,
-            messages=messages,
+            messages=sample.messages,
             logit_bias=logit_biases,
-            **self.completion_args,
-        )
-        response_text = response.choices[0].message.content
-        answer = self.extract_answer(response_text)
-        return SolverResult(answer=answer, full_completion=response_text)
+            #stream=True,
+            **self.completion_args)
+        
+        # non-streaming
+        full_response = response.choices[0].message.content
 
-    def extract_answer(self, response: str) -> str:
-        """
-        Extracts the answer from the response.
-        """
-        # extract answer from response
-        answer = response.split("Answer:")[-1]
-        answer = answer.strip()
-        return answer
+        # streaming
+        # full_response = ""
+        # for chunk in response:
+        #     content = chunk.choices[0].delta.content
+        #     if content:
+        #         full_response += content
 
-    def censor_strings(self, strings: list[str]) -> dict[str, int]:
+        result = SolverResult(sample, self, full_response)
+        with self.lock:
+            with open(self.log_filename, 'a') as logfile:
+                logfile.write(result.__repr__() + "\n")
+            if pbar is not None:
+                pbar.update(1)
+        return result
+    
+    def solve_samples(self, samples:list[Sample], num_threads = 10, do_censor = True):
+        if num_threads > 1:
+            with tqdm(total=len(samples)) as pbar:
+                curried_solve_sample = partial(self.solve_sample, pbar=pbar, do_censor=do_censor)
+
+                with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                    responses = executor.map(curried_solve_sample, samples)
+            responses = list(responses)
+        else:
+            responses = []
+            for sample in tqdm(samples):
+                responses.append(self.solve_sample(sample))
+        return responses
+
+    def __censor_tokens(self, strings: list[str]) -> dict[str, int]:
         logit_biases = {}
         space_encoding = self.encoding.encode(" ")[0]
         censored_tokens = []
@@ -106,7 +99,59 @@ class Solver:
                 censored_tokens += decoded_tokens
             for token in tokens:
                 logit_biases[token] = -100
-
-        logging.debug(f"Censored tokens: {censored_tokens}")
-        logging.debug(f"Logit biases: {logit_biases}")
         return logit_biases
+    
+    def complete_with_modifiers(self, client, **kwargs):
+        def complete():
+            return client.chat.completions.create(**kwargs)
+        return complete()
+
+
+def get_gpt_3_string():
+    return 'gpt-3.5-turbo-0125'
+
+def get_gpt_4_string():
+    real_gpt_4_string = 'gpt-4-0125-preview'
+    print("USING GPT-4. THIS MIGHT BE EXPENSIVE, ARE YOU SURE?")
+    print("Type 'Y' to continue, '3' to use GPT-3, or anything else to cancel.")
+    user_input = input()
+    if user_input == 'Y':
+        print("Using "+real_gpt_4_string)
+        return real_gpt_4_string
+    elif user_input == '3':
+        gpt_3_string = get_gpt_3_string()
+        print("Using "+gpt_3_string)
+        return gpt_3_string
+    else:
+        raise Exception("Run cancelled. Exception data: LMAO POOR")
+
+class SolverResult:
+    def __init__(
+            self,
+            sample,
+            solver,
+            response: str,
+    ):
+        self.sample = sample
+        self.response = response
+        self.solver = solver
+
+        if isinstance(self.sample, dict):
+            self.sample = Sample(**self.sample)
+        if isinstance(self.solver, dict):
+            self.solver = Solver(**self.solver)
+
+    def __repr__(self):
+        return str(self.__dict__)
+    
+    @classmethod
+    def from_json(self, path: str):
+        with open(path, "r") as f:
+            lines = [json.loads(line) for line in f.readlines()]
+            return [SolverResult(**solver_result) for solver_result in lines]
+        
+    @classmethod
+    def to_json(self, solver_results: list, path: str):
+        with open(path, "w") as f:
+            for solver_result in solver_results:
+                f.write((solver_result.__repr__() + "\n").replace("'", '"'))

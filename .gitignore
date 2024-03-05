@@ -1,4 +1,6 @@
 temp
 logs
+figs
+samples
 __pycache__
 .DS_Store
