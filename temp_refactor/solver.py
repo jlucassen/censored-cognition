@@ -44,9 +44,9 @@ class Solver:
     def __repr__(self):
         return str({'model': self.model, 'completion_args': self.completion_args})
         
-    def solve_sample(self, sample: Sample, pbar=None):
+    def solve_sample(self, sample: Sample, pbar=None, do_censor = True):
         time.sleep(60/self.rpm) # respect requests per minute limit
-        logit_biases = self.__censor_tokens(sample.censored_strings)
+        logit_biases = self.__censor_tokens(sample.censored_strings) if do_censor else {}
         response = self.complete_with_modifiers(
             self.client,
             model=self.model,
@@ -73,10 +73,10 @@ class Solver:
                 pbar.update(1)
         return result
     
-    def solve_samples(self, samples:list[Sample], num_threads = 10):
+    def solve_samples(self, samples:list[Sample], num_threads = 10, do_censor = True):
         if num_threads > 1:
             with tqdm(total=len(samples)) as pbar:
-                curried_solve_sample = partial(self.solve_sample, pbar=pbar)
+                curried_solve_sample = partial(self.solve_sample, pbar=pbar, do_censor=do_censor)
 
                 with ThreadPoolExecutor(max_workers=num_threads) as executor:
                     responses = executor.map(curried_solve_sample, samples)
@@ -105,8 +105,10 @@ class Solver:
         def complete():
             return client.chat.completions.create(**kwargs)
         return complete()
-    
-GPT_3_STRING = 'gpt-3.5-turbo-0125'
+
+
+def get_gpt_3_string():
+    return 'gpt-3.5-turbo-0125'
 
 def get_gpt_4_string():
     real_gpt_4_string = 'gpt-4-0125-preview'
@@ -117,11 +119,11 @@ def get_gpt_4_string():
         print("Using "+real_gpt_4_string)
         return real_gpt_4_string
     elif user_input == '3':
-        print("Using "+GPT_3_STRING)
-        return GPT_3_STRING
+        gpt_3_string = get_gpt_3_string()
+        print("Using "+gpt_3_string)
+        return gpt_3_string
     else:
         raise Exception("Run cancelled. Exception data: LMAO POOR")
-GPT_4_STRING = get_gpt_4_string()
 
 class SolverResult:
     def __init__(

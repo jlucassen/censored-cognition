@@ -1,9 +1,12 @@
 from sample import Sample
-from solver import Solver, GPT_3_STRING, GPT_4_STRING, SolverResult
+from solver import Solver, get_gpt_3_string, get_gpt_4_string, SolverResult
 from judge import EQUALS_DIGIT_JUDGE, JudgeResult
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+gpt_3_string = get_gpt_3_string()
+gpt_4_string = get_gpt_4_string()
 
 samples_1 = Sample.from_json('samples/multiplication_1000_1_42_baseline.jsonl')
 samples_3 = Sample.from_json('samples/multiplication_1000_3_42_baseline.jsonl')
@@ -13,8 +16,8 @@ samples_5 = Sample.from_json('samples/multiplication_1000_5_42_baseline.jsonl')
 samples_6 = Sample.from_json('samples/multiplication_1000_6_42_baseline.jsonl')
 samples_7 = Sample.from_json('samples/multiplication_1000_7_42_baseline.jsonl')
 
-solver_4 = Solver(GPT_4_STRING, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
-solver_3 = Solver(GPT_3_STRING, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
+solver_4 = Solver(gpt_3_string, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
+solver_3 = Solver(gpt_4_string, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
 
 equalsJudge = EQUALS_DIGIT_JUDGE
 

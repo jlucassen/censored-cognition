@@ -1,7 +1,7 @@
 import json
 
 from sample import Sample
-from solver import Solver, GPT_3_STRING, SolverResult
+from solver import Solver, get_gpt_3_string, SolverResult
 from judge import EQUALS_JUDGE, JudgeResult
 
 # make a sample from constructor
@@ -17,7 +17,8 @@ my_sample2 = Sample.from_json('testfiles/test_sample.jsonl')[0]
 assert my_sample == my_sample2
 
 # make a solver from constructor
-my_solver = Solver(GPT_3_STRING, {})
+gpt_3_string = get_gpt_3_string()
+my_solver = Solver(gpt_3_string, {})
 # solve the sample
 my_solver_result = my_solver.solve_sample(my_sample)
 # save the SolverResult to jsonl and load it back
