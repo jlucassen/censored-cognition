@@ -1,9 +1,5 @@
 from sample import Sample
 from solver import Solver, get_gpt_3_string, get_gpt_4_string, SolverResult
-from judge import CONTAINS_DIGIT_JUDGE, JudgeResult
-
-import matplotlib.pyplot as plt
-import numpy as np
 
 gpt_3_string = get_gpt_3_string()
 gpt_4_string = get_gpt_4_string()
@@ -16,8 +12,8 @@ samples_5 = Sample.from_json('samples/multiplication/mult_memorize_1000_5_42.jso
 samples_6 = Sample.from_json('samples/multiplication/mult_memorize_1000_6_42.jsonl')
 samples_7 = Sample.from_json('samples/multiplication/mult_memorize_1000_7_42.jsonl')
 
-solver_4 = Solver(gpt_3_string, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
-solver_3 = Solver(gpt_4_string, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
+solver_3 = Solver(gpt_3_string, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
+solver_4 = Solver(gpt_4_string, {'temperature': 0.0, 'max_tokens': 30, 'seed': 42})
 
 solver_results_3 = []
 solver_results_4 = []
