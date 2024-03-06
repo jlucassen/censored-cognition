@@ -36,21 +36,3 @@ flattened_solver_results_3 = [solver_result for sublist in solver_results_3 for 
 flattened_solver_results_4 = [solver_result for sublist in solver_results_4 for solver_result in sublist]
 SolverResult.to_json(flattened_solver_results_3, 'logs/multiplication/mult_memorize_solver_results_3.jsonl')
 SolverResult.to_json(flattened_solver_results_4, 'logs/multiplication/mult_memorize_solver_results_4.jsonl')
-
-judges = {'CONTAINS_DIGIT_JUDGE':CONTAINS_DIGIT_JUDGE}
-
-for name, judge in judges.items():
-    judge_results_3 = []
-    judge_results_4 = []
-    for i, solver_results in enumerate(solver_results_3):
-        print(f'Judging gpt-3 responses with {i+1} digits')
-        judge_results_3.append(judge.judge_solver_results(solver_results, num_threads=100))
-    for i, solver_results in enumerate(solver_results_4):
-        print(f'Judging gpt-4 responses with {i+1} digits')
-        judge_results_4.append(judge.judge_solver_results(solver_results, num_threads=100))
-
-    flattened_judge_results_3 = [judge_result for sublist in judge_results_3 for judge_result in sublist]
-    flattened_judge_results_4 = [judge_result for sublist in judge_results_4 for judge_result in sublist]
-
-    JudgeResult.to_json(flattened_judge_results_3, f'logs/multiplication/mult_memorize_judge_results_3_{name}.jsonl')
-    JudgeResult.to_json(flattened_judge_results_4, f'logs/multiplication/mult_memorize_judge_results_4_{name}.jsonl')
