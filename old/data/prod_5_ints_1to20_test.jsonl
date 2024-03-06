@@ -1,2 +1,0 @@
-{"id": 1, "censored_numbers": [4, 1, 9, 8, 8], "task": "Compute the result of 4 * 1 * 9 * 8 * 8.", "correct_answer": 2304}
-{"id": 2, "censored_numbers": [2, 10, 5, 15, 12], "task": "Compute the result of 2 * 10 * 5 * 15 * 12.", "correct_answer": 18000}
