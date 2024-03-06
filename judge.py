@@ -23,7 +23,7 @@ class Judge:
         self.id = id
         self.judge_function = judge_function
 
-        self.log_filename = datetime.now().strftime('logs/judge_results/judge_result_log_%Y_%m_%d_%H%M%S.txt')
+        self.log_filename = datetime.now().strftime('logs/all_runs/judge_results/judge_result_log_%Y_%m_%d_%H%M%S.txt')
         open(self.log_filename, "w")
 
         self.lock = threading.Lock()

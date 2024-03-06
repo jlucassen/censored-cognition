@@ -32,7 +32,7 @@ class Solver:
         self.model = model
         self.completion_args = completion_args
 
-        self.log_filename = datetime.now().strftime('logs/solver_results/solver_result_log_%Y_%m_%d_%H%M%S.txt')
+        self.log_filename = datetime.now().strftime('logs/all_runs/solver_results/solver_result_log_%Y_%m_%d_%H%M%S.txt')
         open(self.log_filename, "w")
         
         self.client = OpenAI(api_key = os.getenv('OPENAI_API_KEY'))
