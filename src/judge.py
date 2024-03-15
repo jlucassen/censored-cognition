@@ -146,5 +146,5 @@ class JudgeResult:
             for judge_result in judge_results:
                 temp = judge_result.correct
                 judge_result.correct = str(judge_result.correct)
-                f.write((judge_result.__repr__() + "\n").replace("'", '"'))
+                f.write(json.dumps(judge_result.__dict__) + "\n")
                 judge_result.correct = temp

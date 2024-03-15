@@ -167,4 +167,4 @@ class SolverResult:
     def to_json(self, solver_results: list, path: str):
         with open(path, "w") as f:
             for solver_result in solver_results:
-                f.write((solver_result.__repr__() + "\n").replace("'", '"'))
+                f.write(json.dumps(solver_result.__dict__) + "\n")
