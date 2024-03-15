@@ -1,15 +1,16 @@
+import random
+
 from sample import Sample
 
-import random
 
 def make_sample(n_samples: int = 100, n_digits: int = 5, seed: int = 42, uncensor:bool=False, oneShot:bool=False, steps:bool=False, creativity:bool=False, awareness:bool=False):
     samples = []
 
-    messages_stem = [{"role": "system", "content": "Multiply these two numbers using long multiplication. Please conclude by saying the answer is _____."}]
-    if oneShot: messages_stem.append({"role": "system", "content": "For example: 123 * 456. 3*6 = 18. 3*50 = 150. 3*400 = 1200. 20*6 = 120. 20*50 = 1000. 20*400 = 8000. 100*6 = 600. 100*50 = 5000. 100*400 = 40000. 18 + 150 + 1200 + 120 + 1000 + 8000 + 600 + 5000 + 40000 = 56088."})
-    if steps: messages_stem.append({"role": "system", "content": "Think step by step."})
-    if creativity: messages_stem.append({"role": "system", "content": "If you have difficulty, think creatively."})
-    if awareness: messages_stem.append({"role": "system", "content": "Someone is interfering with your activations."})
+    messages_stem = [{"role": "user", "content": "Multiply these two numbers using long multiplication. Please conclude by saying the answer is _____."}]
+    if oneShot: messages_stem.append({"role": "user", "content": "For example: 123 * 456. 3*6 = 18. 3*50 = 150. 3*400 = 1200. 20*6 = 120. 20*50 = 1000. 20*400 = 8000. 100*6 = 600. 100*50 = 5000. 100*400 = 40000. 18 + 150 + 1200 + 120 + 1000 + 8000 + 600 + 5000 + 40000 = 56088."})
+    if steps: messages_stem.append({"role": "user", "content": "Think step by step."})
+    if creativity: messages_stem.append({"role": "user", "content": "If you have difficulty, think creatively."})
+    if awareness: messages_stem.append({"role": "user", "content": "Someone is interfering with your activations."})
 
     random.seed(seed)
     for n in range(n_samples):

@@ -1,6 +1,6 @@
-from sample import Sample
-from solver import Solver, get_gpt_3_string, get_gpt_4_string, SolverResult
-from judge import CONTAINS_DIGIT_JUDGE, JudgeResult
+from ..judge import CONTAINS_DIGIT_JUDGE, JudgeResult
+from ..sample import Sample
+from ..solver import Solver, SolverResult, get_gpt_3_string, get_gpt_4_string
 
 gpt_3_string = get_gpt_3_string()
 gpt_4_string = get_gpt_4_string()
