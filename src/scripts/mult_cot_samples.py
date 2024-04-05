@@ -77,7 +77,7 @@ def make_sample(
                 correct_answer,
             )
         )
-    filename = f"samples/multiplication/mult"
+    filename = "samples/multiplication/mult"
     if uncensor:
         filename += "_uncensor"
     if oneShot:
@@ -89,11 +89,14 @@ def make_sample(
     if awareness:
         filename += "_awareness"
     filename += f"_{n_samples}_{n_digits}_{seed}"
+    print(f"Storing current samples in {filename}")
     Sample.to_json(samples, filename + ".jsonl")
 
 
 for i in range(1, 8):
-    make_sample(1000, i, 42, uncensor=True)
+    num_samples = 1000
+    print(f"Creating {num_samples} samples with cognition censoring")
+    make_sample(num_samples, i, 42, uncensor=True, steps=True)
     # make_sample(1000, i, 42, steps=True)
     # make_sample(1000, i, 42, creativity=True)
     # make_sample(1000, i, 42, awareness=True)

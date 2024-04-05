@@ -1,7 +1,8 @@
+import glob
+
 import matplotlib.pyplot as plt
 import numpy as np
-
-from ..judge import JudgeResult
+from src.json_serialization import deserialize_judge_results_from_json
 
 
 def make_plot(judge_results_3, judge_results_4, title_addendum, savefilename):
@@ -40,36 +41,65 @@ def make_plot(judge_results_3, judge_results_4, title_addendum, savefilename):
     ax.legend(loc="upper right", ncols=2)
     ax.set_ylim(0, 1)
 
-    plt.savefig(f"figs/multiplication/{savefilename}.png")
-    plt.show()
+    plot_filename = f"figs/multiplication/{savefilename}.png"
+    print(f"Saving file under {plot_filename}")
+    plt.savefig(plot_filename)
+    # plt.show()
+
+
+def get_modes_to_judge_result_file_path():
+    stems = set()
+    all_files_in_dir = glob.glob("logs/multiplication/*_judge_results_3*.jsonl")
+    for file in all_files_in_dir:
+        stems.add(
+            (file.split("_judge_results_")[0]).removeprefix("logs/multiplication/")
+        )
+    return {stem: f"logs/multiplication/{stem}" for stem in stems}
 
 
 batch = 1000
+modes_to_judge_result_file_path = get_modes_to_judge_result_file_path()
 judges = ["CONTAINS_DIGIT_JUDGE"]
 
-for name in judges:
-    judge_results_3_flat = JudgeResult.from_json(
-        f"logs/multiplication/mult_uncensor_judge_results_3_{name}.jsonl"
-    )
-    judge_results_4_flat = JudgeResult.from_json(
-        f"logs/multiplication/mult_uncensor_judge_results_4_{name}.jsonl"
-    )
+for mode, judge_results_file_path in modes_to_judge_result_file_path.items():
+    print(f"Loading judge results for mode {mode}")
+    for judge in judges:
+        judge_results_3_file_path = (
+            f"{judge_results_file_path}_judge_results_3_{judge}.jsonl"
+        )
+        judge_results_4_file_path = (
+            f"{judge_results_file_path}_judge_results_4_{judge}.jsonl"
+        )
+        print(
+            f"Loading judge results from {judge_results_3_file_path} and {judge_results_4_file_path}"
+        )
+        judge_results_3_flat = deserialize_judge_results_from_json(
+            judge_results_3_file_path
+        )
+        judge_results_4_flat = deserialize_judge_results_from_json(
+            judge_results_4_file_path
+        )
 
-    # divide up flattened judge results into lists of 1000
-    assert len(judge_results_3_flat) % batch == 0
-    assert len(judge_results_4_flat) % batch == 0
-    judge_results_3 = [
-        judge_results_3_flat[i * batch : (i + 1) * batch]
-        for i in range(int(len(judge_results_3_flat) / batch))
-    ]
-    judge_results_4 = [
-        judge_results_4_flat[i * batch : (i + 1) * batch]
-        for i in range(int(len(judge_results_4_flat) / batch))
-    ]
+        # divide up flattened judge results into lists of 1000
+        assert len(judge_results_3_flat) % batch == 0
+        assert len(judge_results_4_flat) % batch == 0
+        judge_results_3 = [
+            judge_results_3_flat[i * batch : (i + 1) * batch]
+            for i in range(int(len(judge_results_3_flat) / batch))
+        ]
+        judge_results_4 = [
+            judge_results_4_flat[i * batch : (i + 1) * batch]
+            for i in range(int(len(judge_results_4_flat) / batch))
+        ]
 
-    make_plot(
-        judge_results_3,
-        judge_results_4,
-        title_addendum=name,
-        savefilename=f"mult_uncensor_{name}",
-    )
+        make_plot(
+            judge_results_3,
+            judge_results_4,
+            title_addendum=judge,
+            savefilename=f"{mode}_{judge}",
+        )
+
+print(
+    f"Created {len(modes_to_judge_result_file_path) * len(judges)} plots for the following modes: {list(modes_to_judge_result_file_path.keys())} and juges: {judges}"
+)
+print("You can find the generated plots under figs/multiplication/*.png")

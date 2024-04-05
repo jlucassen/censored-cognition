@@ -1,13 +1,21 @@
-from ..judge import CONTAINS_DIGIT_JUDGE, JudgeResult
-from ..solver import SolverResult
+from src.json_serialization import (
+    deserialize_solver_results_from_json,
+    serialize_judge_results_to_json,
+)
+
+from ..judge import CONTAINS_DIGIT_JUDGE
 
 solver_result_names = ["logs/multiplication/mult_memorize_solver_results"]
 judges = {"CONTAINS_DIGIT_JUDGE": CONTAINS_DIGIT_JUDGE}
 batch = 1000
 
 for solver_result_name in solver_result_names:
-    solver_results_3_flat = SolverResult.from_json(f"{solver_result_name}_3.jsonl")
-    solver_results_4_flat = SolverResult.from_json(f"{solver_result_name}_4.jsonl")
+    solver_results_3_flat = deserialize_solver_results_from_json(
+        f"{solver_result_name}_3.jsonl"
+    )
+    solver_results_4_flat = deserialize_solver_results_from_json(
+        f"{solver_result_name}_4.jsonl"
+    )
 
     assert len(solver_results_3_flat) % batch == 0
     assert len(solver_results_4_flat) % batch == 0
@@ -41,11 +49,11 @@ for solver_result_name in solver_result_names:
             judge_result for sublist in judge_results_4 for judge_result in sublist
         ]
 
-        JudgeResult.to_json(
+        serialize_judge_results_to_json(
             flattened_judge_results_3,
             f"logs/multiplication/mult_memorize_judge_results_3_{name}.jsonl",
         )
-        JudgeResult.to_json(
+        serialize_judge_results_to_json(
             flattened_judge_results_4,
             f"logs/multiplication/mult_memorize_judge_results_4_{name}.jsonl",
         )

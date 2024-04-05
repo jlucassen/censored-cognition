@@ -1,5 +1,7 @@
+from src.json_serialization import serialize_solver_results_to_json
+
 from ..sample import Sample
-from ..solver import Solver, SolverResult, get_gpt_3_string, get_gpt_4_string
+from ..solver import Solver, get_gpt_3_string, get_gpt_4_string
 
 gpt_3_string = get_gpt_3_string()
 gpt_4_string = get_gpt_4_string()
@@ -40,11 +42,11 @@ flattened_solver_results_3 = [
 flattened_solver_results_4 = [
     solver_result for sublist in solver_results_4 for solver_result in sublist
 ]
-SolverResult.to_json(
+serialize_solver_results_to_json(
     flattened_solver_results_3,
     "logs/multiplication/mult_memorize_solver_results_3.jsonl",
 )
-SolverResult.to_json(
+serialize_solver_results_to_json(
     flattened_solver_results_4,
     "logs/multiplication/mult_memorize_solver_results_4.jsonl",
 )

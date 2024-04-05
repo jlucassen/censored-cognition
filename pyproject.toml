@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "censored-cognition"
+version = "0.1.0"
+description = "Repo containing code for censored cognition experiments on LLMs (apply logit biases to LLMs, ask them questions where the answers are related to the biased tokens, see if they can circumvent the bias)"
+authors = ["Jan Ebbing <Jan.Ebbing@gmx.de>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+openai = "^1.14.2"
+numpy = "^1.26.4"
+matplotlib = "^3.8.3"
+tqdm = "^4.66.2"
+tiktoken = "^0.6.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
+mypy = "^1.9.0"
+flake8 = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

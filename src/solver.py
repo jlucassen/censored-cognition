@@ -1,9 +1,9 @@
-import json
 import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from faulthandler import disable
 from functools import partial
 
 import tiktoken
@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from .sample import Sample
 
+SOLVER_CLIENT = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class Solver:
     """
@@ -31,16 +32,18 @@ class Solver:
         self,
         model: str,
         completion_args: dict = {},
+        logging=True,
     ):
         self.model = model
         self.completion_args = completion_args
 
-        self.log_filename = datetime.now().strftime(
-            "logs/all_runs/solver_results/solver_result_log_%Y_%m_%d_%H%M%S.txt"
-        )
-        open(self.log_filename, "w")
+        self.logging = logging
+        if self.logging:
+            self.log_filename = datetime.now().strftime(
+                "logs/all_runs/solver_results/solver_result_log_%Y_%m_%d_%H%M%S.txt"
+            )
+            open(self.log_filename, "w")
 
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.encoding = tiktoken.encoding_for_model(self.model)
 
         self.lock = threading.Lock()
@@ -49,13 +52,15 @@ class Solver:
     def __repr__(self):
         return str({"model": self.model, "completion_args": self.completion_args})
 
-    def solve_sample(self, sample: Sample, pbar=None, do_censor=True):
-        time.sleep(60 / self.rpm)  # respect requests per minute limit
+    def solve_sample(
+        self, sample: Sample, pbar=None, do_censor=True, num_threads: int = 1
+    ):
+        time.sleep(num_threads * 60 / self.rpm)  # respect requests per minute limit
         logit_biases = (
             self.__censor_tokens(sample.censored_strings) if do_censor else {}
         )
         response = self.complete_with_modifiers(
-            self.client,
+            SOLVER_CLIENT,
             model=self.model,
             messages=sample.messages,
             logit_bias=logit_biases,
@@ -75,8 +80,9 @@ class Solver:
 
         result = SolverResult(sample, self, full_response)
         with self.lock:
-            with open(self.log_filename, "a") as logfile:
-                logfile.write(result.__repr__() + "\n")
+            if self.logging:
+                with open(self.log_filename, "a") as logfile:
+                    logfile.write(result.__repr__() + "\n")
             if pbar is not None:
                 pbar.update(1)
         return result
@@ -85,7 +91,10 @@ class Solver:
         if num_threads > 1:
             with tqdm(total=len(samples)) as pbar:
                 curried_solve_sample = partial(
-                    self.solve_sample, pbar=pbar, do_censor=do_censor
+                    self.solve_sample,
+                    pbar=pbar,
+                    do_censor=do_censor,
+                    num_threads=num_threads,
                 )
 
                 with ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -144,6 +153,7 @@ class SolverResult:
         sample,
         solver,
         response: str,
+        logging=True,
     ):
         self.sample = sample
         self.response = response
@@ -152,19 +162,7 @@ class SolverResult:
         if isinstance(self.sample, dict):
             self.sample = Sample(**self.sample)
         if isinstance(self.solver, dict):
-            self.solver = Solver(**self.solver)
+            self.solver = Solver(**self.solver, logging=logging)
 
     def __repr__(self):
         return str(self.__dict__)
-
-    @classmethod
-    def from_json(self, path: str):
-        with open(path, "r") as f:
-            lines = [json.loads(line) for line in f.readlines()]
-            return [SolverResult(**solver_result) for solver_result in lines]
-
-    @classmethod
-    def to_json(self, solver_results: list, path: str):
-        with open(path, "w") as f:
-            for solver_result in solver_results:
-                f.write(json.dumps(solver_result.__dict__) + "\n")

@@ -20,6 +20,7 @@ pip install -r requirements.txt
 mkdir -p logs/all_runs/judge_results
 mkdir -p logs/multiplication
 mkdir -p logs/all_runs/solver_results
+mkdir -p figs/multiplication
 mkdir -p samples/multiplication
 ```
 
@@ -31,3 +32,9 @@ python -m src.scripts.mult_memorize_solvers
 python -m src.scripts.mult_memorize_judges
 python -m src.scripts.mult_memorize_figs
 ```
+
+
+## TODO
+
+- Fix judge function serialization (move to dict indexed by name)
+- Remove double calls to GPT-3. Instead, allow selecting which models to run via CLI/input, run all of them, and make the scripts work with multiple models
