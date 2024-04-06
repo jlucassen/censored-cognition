@@ -16,7 +16,7 @@ def get_modes_to_samples():
         stem = (file.split("_1000_")[0]).removeprefix("samples/multiplication/")
         stems.add(stem)
     return {
-        stem: list(
+        stem: sorted(
             filter(
                 lambda f: f.startswith(f"samples/multiplication/{stem}_1000_"),
                 all_files_in_dir,
